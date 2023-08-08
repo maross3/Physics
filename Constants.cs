@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿
+using Microsoft.Xna.Framework;
 
 namespace Physics
 {
@@ -9,6 +10,7 @@ namespace Physics
         public const int MS_PER_FRAME = 1000 / FPS;
 
         public const int PIXELS_PER_METER = 50;
-        public static Vector2 PARTICLE_ACCELERATION = new(0.0f, 10.8f * PIXELS_PER_METER);
+        public const float GRAVITY_MPS = 9.8f;
+        public static readonly Vector2 ParticleAcceleration = new(0.0f, 10.8f * PIXELS_PER_METER);
     }
 }

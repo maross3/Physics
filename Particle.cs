@@ -1,27 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Vector2 = System.Numerics.Vector2;
 
+
+// look into supporting other integration techniques and their tradeoffs:
+// Euler integration is 'good enough' for most games 
+// Verlet for simulating large number of particles
+// Runge-Kutta family (family of integrators) for accuracy
+
+
+// Differentiating a function at a certain time 't', is the process of finding its rate of change (slope/tangent).
+// If we need to predict the position of an object, we can integrate the velocity by a certain delta time 'dt'
+
+// net force, sum of all forces (to apply)
+
+// acceleration = force / mass
+
+// kinematics vs kenetics
+// kinematics only deals with acceleration and velocity, but not forces.
+// we also consider the effects of mass and forces, then we are talking about Kinetics.
 namespace Physics
 {
     public class Particle
     {
-        private Texture2D texture;
+        private Texture2D _texture;
         public Vector2 position;
         public Vector2 velocity;
-        public Vector2 acceleration;
+        private Vector2 acceleration;
         public float mass;
+        public float inverseMass;
         public GraphicsDevice device;
         public int radius;
 
         public bool start;
+        private Vector2 _sumForce;
+
+        public void AddForce(Vector2 force) =>
+            _sumForce += force;
+
+        public void ClearForces() =>
+            _sumForce = Vector2.Zero;
+
         // slope is velocity, 100/30
         // const acceleration allows velocity to change
         public Particle(float x, float y, float mass)
@@ -30,19 +49,24 @@ namespace Physics
             position = new Vector2(x, y);
             velocity = new Vector2(140, 30);
             this.mass = mass;
+            SetInverseMass();
         }
+
         public Particle(float x, float y, float mass, int radius)
         {
             this.radius = radius;
             position = new Vector2(x, y);
             velocity = new Vector2(140, 30);
             this.mass = mass;
+            SetInverseMass();
         }
 
+        private void SetInverseMass() =>
+            inverseMass = mass != 0 ? 1 / mass : 0; 
         public void Initialize(GraphicsDevice gDevice)
         {
             device = gDevice;
-            texture = CreateCircle(radius);
+            _texture = CreateCircle(radius);
         }
 
         // constant acceleration defferential & integral calculus:
@@ -80,16 +104,26 @@ namespace Physics
         
         public void Update(GameTime time)
         {
-            if (Keyboard.GetState().IsKeyDown(Keys.Space)) start = true;
-            if (position.Y  + texture.Height> Game1.ScreenBounds.Bottom)
+            /*
+            if (Keyboard.GetState().IsKeyDown(Keys.Space) && !start) start = true;
+            else if (Keyboard.GetState().IsKeyDown(Keys.Space))
             {
-                position.Y = Game1.ScreenBounds.Bottom - texture.Height;
+                position.X = 50;
+                position.Y = 100;
+                velocity = new Vector2(140, 30);
+            }
+            */
+
+
+            if (position.Y + _texture.Height > Game1.ScreenBounds.Bottom)
+            {
+                position.Y = Game1.ScreenBounds.Bottom - _texture.Height;
                 velocity.Y *= -0.8f;
             }
-            
-            if (position.X + texture.Width > Game1.ScreenBounds.Right)
+
+            if (position.X + _texture.Width > Game1.ScreenBounds.Right)
             {
-                position.X = Game1.ScreenBounds.Right - texture.Width;
+                position.X = Game1.ScreenBounds.Right - _texture.Width;
                 velocity.X *= -0.9f;
             }
             else if (position.X < Game1.ScreenBounds.Left)
@@ -101,21 +135,23 @@ namespace Physics
 
         public void DeltaUpdate(float deltaTime)
         {
-            if (! start) return;
-            FindNewPosition(deltaTime);
+            //  if (!start) return;
+            Integrate(deltaTime);
         }
 
-        // integration
-        private void FindNewPosition(float deltaTime)
+        // euler
+        private void Integrate(float dt)
         {
-            velocity += Constants.PARTICLE_ACCELERATION * deltaTime;
-            position += velocity * deltaTime;
+            acceleration = _sumForce / mass;
+            velocity += acceleration * dt;
+            position += velocity * dt;
+            ClearForces();
         }
 
         public void Draw(SpriteBatch batch)
         {
             batch.Draw(
-                texture,
+                _texture,
                 position,
                 null,
                 Color.White,
