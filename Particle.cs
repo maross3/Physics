@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 
 // look into supporting other integration techniques and their tradeoffs:
@@ -104,17 +103,8 @@ namespace Physics
         
         public void Update(GameTime time)
         {
-            /*
-            if (Keyboard.GetState().IsKeyDown(Keys.Space) && !start) start = true;
-            else if (Keyboard.GetState().IsKeyDown(Keys.Space))
-            {
-                position.X = 50;
-                position.Y = 100;
-                velocity = new Vector2(140, 30);
-            }
-            */
 
-
+            // hacked collisions for now
             if (position.Y + _texture.Height > Game1.ScreenBounds.Bottom)
             {
                 position.Y = Game1.ScreenBounds.Bottom - _texture.Height;
@@ -135,7 +125,8 @@ namespace Physics
 
         public void DeltaUpdate(float deltaTime)
         {
-            //  if (!start) return;
+            var dragForce = Force.GenerateDragForce(this, 0.01f);
+            
             Integrate(deltaTime);
         }
 

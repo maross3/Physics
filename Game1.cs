@@ -8,14 +8,12 @@ namespace Physics
 {
     public class Game1 : Game
     {
-        // do we need this?
         private GraphicsDeviceManager _graphics;
-
         private SpriteBatch _spriteBatch;
-        public static List<Particle> particles = new List<Particle>();
+        private static readonly List<Particle> _SParticles = new();
+        public static Rectangle ScreenBounds { get; private set; }
 
-        public static Rectangle ScreenBounds { get; set; }
-
+        
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -29,19 +27,23 @@ namespace Physics
         {
             var particle = new Particle(50, 100, 1.0f, 8);
             var bigParticle = new Particle(150, 100, 10.0f, 20);
-           particles.Add(particle);
-           particles.Add(bigParticle);
+           _SParticles.Add(particle);
+           _SParticles.Add(bigParticle);
+
+
+           
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            foreach (var particle in particles) particle.Initialize(GraphicsDevice);
-            // particle.Initialize(GraphicsDevice);
+            foreach (var particle in _SParticles) particle.Initialize(GraphicsDevice);
             ScreenBounds = GraphicsDevice.Viewport.Bounds;
-
-            // look into GraphicsDevice.DisplayMode
+           liquid.X = 0;
+           liquid.Y = ScreenBounds.Height / 2;
+           liquid.Width = ScreenBounds.Width;
+           liquid.Height = ScreenBounds.Height / 2;
         }
 
         #endregion
@@ -50,19 +52,20 @@ namespace Physics
 
         protected override void Draw(GameTime gameTime)
         {
+            // todo, should we set the background via a local property or a const?
             GraphicsDevice.Clear(Color.Black);
-
-            // TODO: Add your drawing code here
             _spriteBatch.Begin();
-            foreach (var particle in particles) particle.Draw(_spriteBatch);
-
-            // particle.Draw(_spriteBatch);
-            // _spriteBatch.Draw();
+            
+            // draw calls
+            DrawParticles();
+            
             _spriteBatch.End();
-
             base.Draw(gameTime);
         }
 
+        private void DrawParticles() =>
+            _SParticles.ForEach(particle => particle.Draw(_spriteBatch));
+        
         #endregion
 
         #region updating
@@ -70,15 +73,15 @@ namespace Physics
         private Vector2 LeftForce = new(-30 * PIXELS_PER_METER, 0);
         private Vector2 RightForce = new(30 * PIXELS_PER_METER, 0);
         private Vector2 DownForce = new(0, 30 * PIXELS_PER_METER);
+        private Rectangle liquid;
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
                 Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
             DeltaUpdate(gameTime);
-            foreach (var particle in particles)
+            foreach (var particle in _SParticles)
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.Up)) particle.AddForce(UpForce);
                 else if (Keyboard.GetState().IsKeyDown(Keys.Left)) particle.AddForce(LeftForce);
@@ -86,13 +89,12 @@ namespace Physics
                 else if (Keyboard.GetState().IsKeyDown(Keys.Down)) particle.AddForce(DownForce);
                 particle.Update(gameTime);
             }
-            // particle.Update(gameTime);
             base.Update(gameTime);
         }
 
         private void DeltaUpdate(float deltaTime)
         {
-            foreach (var particle in particles)
+            foreach (var particle in _SParticles)
             {
                 var wind = new Vector2(1, 0);
                 particle.AddForce(wind * PIXELS_PER_METER);
@@ -100,10 +102,12 @@ namespace Physics
                 var weight = new Vector2(0, particle.mass * GRAVITY_MPS * PIXELS_PER_METER);
                 particle.AddForce(wind * PIXELS_PER_METER);
                 particle.AddForce(weight);
+                
+                if (particle.position.Y >= liquid.Y)
+                    particle.AddForce(Force.GenerateDragForce(particle, 0.01f));
 
                 particle.DeltaUpdate(deltaTime);
             }
-            // particle.DeltaUpdate(deltaTime);
         }
 
         #endregion
