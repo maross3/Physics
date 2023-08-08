@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+#region notes
 
 // look into supporting other integration techniques and their tradeoffs:
 // Euler integration is 'good enough' for most games 
@@ -8,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 // Runge-Kutta family (family of integrators) for accuracy
 
 
+// Particle Notes:
 // Differentiating a function at a certain time 't', is the process of finding its rate of change (slope/tangent).
 // If we need to predict the position of an object, we can integrate the velocity by a certain delta time 'dt'
 
@@ -15,9 +17,48 @@ using Microsoft.Xna.Framework.Graphics;
 
 // acceleration = force / mass
 
-// kinematics vs kenetics
+// kinematics vs kinetics
 // kinematics only deals with acceleration and velocity, but not forces.
 // we also consider the effects of mass and forces, then we are talking about Kinetics.
+
+// constant acceleration differential & integral calculus:
+// differential:
+// from position ->
+// velocity = delta position / delta time
+// acceleration = velocity / delta time
+
+// differentialtion
+// position = p0 + velocity0 * time + ((acceleration * time ^ 2) / 2)
+// derive velocity -> v = delta pos / deta time
+// velocity = v0 + acceleration * time
+// derive acceleration -> delta velocity / delta time
+
+// integral:
+// from acceleration ->
+// velocity = integral of acelleration at a(*) delta time
+// position = integral of velocity at a(*) delta time
+
+// integral -> acceleration * dt = v0 + acceleration * time
+// integral -> veleocity * dt = p0 + v0 * time + ((acceleration * time ^ 2) / 2) 
+
+// integrate (estimate) position:
+// velocity += acceleration * delta time,
+// position += velocity * delta time
+
+// notation:
+// newton notation p(with a dot above it) =
+// Leibniz notation dp/dt =
+// velocity
+
+// newton notation p (with 2 dots) = 
+// Leibniz notation d^2p / dt^2 = (would this be v or p?)
+// acceleration
+
+// slope is velocity, 100/30
+// const acceleration allows velocity to change
+
+#endregion
+
 namespace Physics
 {
     public class Particle
@@ -25,138 +66,33 @@ namespace Physics
         private Texture2D _texture;
         public Vector2 position;
         public Vector2 velocity;
-        private Vector2 acceleration;
-        public float mass;
+        private Vector2 _acceleration;
+        private GraphicsDevice _device;
+
+        // drawback: of being readonly leads to not being able to change at runtime.
+        public readonly float mass;
+        private readonly int _radius;
+
         public float inverseMass;
-        public GraphicsDevice device;
-        public int radius;
-
-        public bool start;
         private Vector2 _sumForce;
-
-        public void AddForce(Vector2 force) =>
-            _sumForce += force;
-
-        public void ClearForces() =>
-            _sumForce = Vector2.Zero;
-
-        // slope is velocity, 100/30
-        // const acceleration allows velocity to change
-        public Particle(float x, float y, float mass)
-        {
-            radius = 8;
-            position = new Vector2(x, y);
-            velocity = new Vector2(140, 30);
-            this.mass = mass;
-            SetInverseMass();
-        }
 
         public Particle(float x, float y, float mass, int radius)
         {
-            this.radius = radius;
+            _radius = radius;
             position = new Vector2(x, y);
             velocity = new Vector2(140, 30);
             this.mass = mass;
             SetInverseMass();
         }
 
-        private void SetInverseMass() =>
-            inverseMass = mass != 0 ? 1 / mass : 0; 
-        public void Initialize(GraphicsDevice gDevice)
-        {
-            device = gDevice;
-            _texture = CreateCircle(radius);
-        }
-
-        // constant acceleration defferential & integral calculus:
-        // differential:
-        // from position ->
-        // velocity = delta position / delta time
-        // acceleration = velocity / delta time
-
-        // differentialtion
-        // position = p0 + velocity0 * time + ((acceleration * time ^ 2) / 2)
-        // derive velocity -> v = delta pos / deta time
-        // velocity = v0 + acceleration * time
-        // derive acceleration -> delta velocity / delta time
-
-        // integral:
-        // from acceleration ->
-        // velocity = integral of acelleration at a(*) delta time
-        // position = integral of velocity at a(*) delta time
-
-        // integral -> acceleration * dt = v0 + acceleration * time
-        // integral -> veleocity * dt = p0 + v0 * time + ((acceleration * time ^ 2) / 2) 
-
-        // integrate (estimate) position:
-        // velocity += acceleration * delta time,
-        // position += velocity * delta time
-
-        // notation:
-        // newton notation p(with a dot above it) =
-        // Leibniz notation dp/dt =
-        // velocity
-
-        // newton notation p (with 2 dots) = 
-        // Leibniz notation d^2p / dt^2 = (would this be v or p?)
-        // acceleration
-        
-        public void Update(GameTime time)
-        {
-
-            // hacked collisions for now
-            if (position.Y + _texture.Height > Game1.ScreenBounds.Bottom)
-            {
-                position.Y = Game1.ScreenBounds.Bottom - _texture.Height;
-                velocity.Y *= -0.8f;
-            }
-
-            if (position.X + _texture.Width > Game1.ScreenBounds.Right)
-            {
-                position.X = Game1.ScreenBounds.Right - _texture.Width;
-                velocity.X *= -0.9f;
-            }
-            else if (position.X < Game1.ScreenBounds.Left)
-            {
-                position.X = Game1.ScreenBounds.Left + 1;
-                velocity.X *= -0.9f;
-            }
-        }
-
-        public void DeltaUpdate(float deltaTime)
-        {
-            var dragForce = Force.GenerateDragForce(this, 0.01f);
-            
-            Integrate(deltaTime);
-        }
-
-        // euler
-        private void Integrate(float dt)
-        {
-            acceleration = _sumForce / mass;
-            velocity += acceleration * dt;
-            position += velocity * dt;
-            ClearForces();
-        }
-
-        public void Draw(SpriteBatch batch)
-        {
-            batch.Draw(
-                _texture,
-                position,
-                null,
-                Color.White,
-                0f,
-                new Vector2(0, 0),
-                Vector2.One,
-                SpriteEffects.None,
-                0f
-            );
-        }
-
+        /// <summary>
+        /// Creates a circle, todo, move to a primitives static class.
+        /// </summary>
+        /// <param name="radius">The radius of the particle determined at runtime during construction.</param>
+        /// <returns></returns>
         private Texture2D CreateCircle(int radius)
         {
-            var texture = new Texture2D(device, radius, radius);
+            var texture = new Texture2D(_device, radius, radius);
             var colorData = new Color[radius * radius];
             var diam = radius / 2f;
             var diamsq = diam * diam;
@@ -177,6 +113,92 @@ namespace Physics
 
             texture.SetData(colorData);
             return texture;
+        }
+
+        /// <summary>
+        /// Assigns the graphic device and creates the texture.
+        /// </summary>
+        /// <param name="gDevice">The game's <see cref="GraphicsDevice"/></param>
+        public void Initialize(GraphicsDevice gDevice)
+        {
+            _device = gDevice;
+            _texture = CreateCircle(_radius);
+        }
+
+        /// <summary>
+        /// The draw method called from the games draw loop.
+        /// </summary>
+        /// <param name="batch"></param>
+        public void Draw(SpriteBatch batch) =>
+            batch.Draw(
+                _texture,
+                position,
+                null,
+                Color.White,
+                0f,
+                new Vector2(0, 0),
+                Vector2.One,
+                SpriteEffects.None,
+                0f
+            );
+
+        /// <summary>
+        /// Called from the games update loop.
+        /// </summary>
+        /// <param name="time">The game time object.</param>
+        public void Update(GameTime time)
+        {
+            // hacked collisions for now
+            if (position.Y + _texture.Height > Game1.ScreenBounds.Bottom)
+            {
+                position.Y = Game1.ScreenBounds.Bottom - _texture.Height;
+                velocity.Y *= -0.8f;
+            }
+
+            if (position.X + _texture.Width > Game1.ScreenBounds.Right)
+            {
+                position.X = Game1.ScreenBounds.Right - _texture.Width;
+                velocity.X *= -0.9f;
+            }
+            else if (position.X < Game1.ScreenBounds.Left)
+            {
+                position.X = Game1.ScreenBounds.Left + 1;
+                velocity.X *= -0.9f;
+            }
+        }
+
+        public void DeltaUpdate(float deltaTime) =>
+            Integrate(deltaTime);
+
+        /// <summary>
+        /// Add a force to the sum of forces.
+        /// </summary>
+        /// <param name="force">The force to add.</param>
+        public void AddForce(Vector2 force) =>
+            _sumForce += force;
+
+        /// <summary>
+        /// Clears the sum of forces.
+        /// </summary>
+        private void ClearForces() =>
+            _sumForce = Vector2.Zero;
+
+        /// <summary>
+        /// Precompute the inverse of the mass value.
+        /// </summary>
+        private void SetInverseMass() =>
+            inverseMass = mass != 0 ? 1 / mass : 0;
+
+        /// <summary>
+        /// Integrate the physics using Euler integration.
+        /// </summary>
+        /// <param name="dt">deltaTime</param>
+        private void Integrate(float dt)
+        {
+            _acceleration = _sumForce / mass;
+            velocity += _acceleration * dt;
+            position += velocity * dt;
+            ClearForces();
         }
     }
 }
