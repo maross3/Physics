@@ -63,18 +63,48 @@ namespace Physics
 {
     public class Particle
     {
-        private Texture2D _texture;
+        /// <summary>
+        /// The position of the particle.
+        /// </summary>
         public Vector2 position;
+        
+        /// <summary>
+        /// The velocity of the particle.
+        /// </summary>
         public Vector2 velocity;
+        
+        /// <summary>
+        /// The acceleration of the particle.
+        /// </summary>
         private Vector2 _acceleration;
+        
+        /// <summary>
+        /// The <see cref="GraphicsDevice"/> used to draw the particle.
+        /// </summary>
         private GraphicsDevice _device;
 
+        /// <summary>
+        /// The inverse mass of the particle, which is 1/mass.
+        /// </summary>
+        public float inverseMass;
+        
         // drawback: of being readonly leads to not being able to change at runtime.
         public readonly float mass;
+        
+        /// <summary>
+        /// The radius of the particle determined at runtime during construction.
+        /// </summary>
         private readonly int _radius;
-
-        public float inverseMass;
+        
+        /// <summary>
+        /// The sum of all forces applied to the particle.
+        /// </summary>
         private Vector2 _sumForce;
+        
+        /// <summary>
+        /// The texture of the particle, which is just a circle.
+        /// </summary>
+        private Texture2D _texture;
 
         public Particle(float x, float y, float mass, int radius)
         {
@@ -85,6 +115,8 @@ namespace Physics
             SetInverseMass();
         }
 
+        #region Initialization
+        
         /// <summary>
         /// Creates a circle, todo, move to a primitives static class.
         /// </summary>
@@ -124,6 +156,13 @@ namespace Physics
             _device = gDevice;
             _texture = CreateCircle(_radius);
         }
+        
+        #endregion
+
+        #region GameLoop Calls
+        
+        public void DeltaUpdate(float deltaTime) =>
+            Integrate(deltaTime);
 
         /// <summary>
         /// The draw method called from the games draw loop.
@@ -167,27 +206,21 @@ namespace Physics
             }
         }
 
-        public void DeltaUpdate(float deltaTime) =>
-            Integrate(deltaTime);
-
+        #endregion
+        
         /// <summary>
         /// Add a force to the sum of forces.
         /// </summary>
         /// <param name="force">The force to add.</param>
         public void AddForce(Vector2 force) =>
             _sumForce += force;
-
+        
         /// <summary>
         /// Clears the sum of forces.
         /// </summary>
         private void ClearForces() =>
             _sumForce = Vector2.Zero;
-
-        /// <summary>
-        /// Precompute the inverse of the mass value.
-        /// </summary>
-        private void SetInverseMass() =>
-            inverseMass = mass != 0 ? 1 / mass : 0;
+        
 
         /// <summary>
         /// Integrate the physics using Euler integration.
@@ -200,5 +233,11 @@ namespace Physics
             position += velocity * dt;
             ClearForces();
         }
+        
+        /// <summary>
+        /// Precompute the inverse of the mass value.
+        /// </summary>
+        private void SetInverseMass() =>
+            inverseMass = mass != 0 ? 1 / mass : 0;
     }
 }
