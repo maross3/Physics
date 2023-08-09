@@ -170,15 +170,11 @@ namespace Physics
         {
             foreach (var particle in _SParticles)
             {
-                var wind = new Vector2(1, 0);
-                particle.AddForce(wind * PIXELS_PER_METER);
-
                 var weight = new Vector2(0, particle.mass * GRAVITY_MPS * PIXELS_PER_METER);
-                particle.AddForce(wind * PIXELS_PER_METER);
                 particle.AddForce(weight);
 
                 if (particle.position.Y >= _liquid.Y)
-                    particle.AddForce(Force.GenerateDragForce(particle, 0.01f));
+                    particle.AddForce(Force.GenerateDragForce(particle, 0.03f));
 
                 particle.DeltaUpdate(deltaTime);
             }

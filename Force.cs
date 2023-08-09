@@ -5,6 +5,7 @@ namespace Physics
 {
     internal static class Force
     {
+        // todo, handle the case that the velocity is less than the drag force
         /// <summary>
         /// Generate particle drag force: 1/2 * p * Kd * A * ||v||^2 * -v
         /// </summary>
