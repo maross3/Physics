@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Physics.DemoGames;
-
+using Physics.DemoGames.BaseGames;
+using Physics.DemoGames.Particles;
 using static Physics.Constants;
 
 namespace Physics
@@ -28,7 +29,7 @@ namespace Physics
         /// </summary>
         public static Rectangle ScreenBounds { get; private set; }
 
-        private static readonly BaseDemoGame _SCurrentGame = new ParticleDragAndFriction();
+        private static readonly BaseDemoGame _SCurrentGame = new ParticleDragDemo();
         
         /// <summary>
         /// The graphics device manager for the demo game.
