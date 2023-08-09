@@ -20,22 +20,31 @@ namespace Physics
         /// </info>
         public static Vector2 GenerateDragForce(Particle particle, float k)
         {
-            var dragForce = new Vector2(0, 0);
-            if (particle.velocity.MagnitudeSquared() <= 0) return dragForce;
-            
+            if (particle.velocity.MagnitudeSquared() <= 0) return Vector2.Zero;
+
             // calculate drag direction, which is the inverse of velocity unit vector
             var dragDirection = Vector2.Multiply(particle.velocity.Normalized(), -1);
-            
+
             // calculate the magnitude of the drag force k * ||v||^2
             var dragMagnitude = k * particle.velocity.MagnitudeSquared();
-            
-            // calculate the final drag force
-            dragForce = dragDirection * dragMagnitude;
 
+            // calculate the final drag force
+            var dragForce = dragDirection * dragMagnitude;
             return dragForce;
         }
+
+        public static Vector2 GenerateFrictionForce(Particle particle, float k)
+        {
+            if (particle.velocity.MagnitudeSquared() <= 0) return Vector2.Zero;
+            var frictionDirection = Vector2.Multiply(particle.velocity.Normalized(), -1);
+            
+            // todo, calculate the magnitude of the friction force
+            
+            var frictionForce = frictionDirection * k;
+            return frictionForce;
+        }
     }
-    
+
     internal static class Vector2Extensions
     {
         /// <summary>
@@ -43,13 +52,13 @@ namespace Physics
         /// </summary>
         public static Vector2 Normalized(this Vector2 vector) =>
             vector / vector.Magnitude();
-        
+
         /// <summary>
         /// Returns the magnitude of the vector.
         /// </summary>
         public static float Magnitude(this Vector2 vector) =>
             (float) Math.Sqrt(vector.X * vector.X + vector.Y * vector.Y);
-        
+
         /// <summary>
         /// Returns the magnitude of the vector squared. Does not calculate the square root.
         /// </summary>

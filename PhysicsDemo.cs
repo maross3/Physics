@@ -1,18 +1,35 @@
-﻿using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using Physics.DemoGames;
+
 using static Physics.Constants;
 
 namespace Physics
 {
     public class PhysicsDemo : Game
     {
+        #region Singleton Access for Demo Games
+       
+        private static Game _game;
+        
+        public static Rectangle GetScreenBounds() =>
+            ScreenBounds;
+        
+        public static GraphicsDevice GetGraphicsDevice() =>
+            _game.GraphicsDevice;
+        
+        public static void ExitGame() =>
+            _game.Exit();
+        
+        #endregion
+        
         /// <summary>
         /// The bounds of the demo game's screen.
         /// </summary>
         public static Rectangle ScreenBounds { get; private set; }
 
+        private static readonly BaseDemoGame _SCurrentGame = new ParticleDragAndFriction();
+        
         /// <summary>
         /// The graphics device manager for the demo game.
         /// </summary>
@@ -28,48 +45,6 @@ namespace Physics
         /// </summary>
         private int _deltaTimeNextStep = MS_PER_FRAME;
 
-        // ! remove
-        /// <summary>
-        /// List of particles for testing.
-        /// </summary>
-        private static readonly List<Particle> _SParticles = new();
-
-        // ! remove
-        /// <summary>
-        /// The texture of the water, which is just a blue rectangle. 
-        /// </summary>
-        private Texture2D _waterTexture;
-
-        // ! remove
-        /// <summary>
-        /// Force applied to the particle when the up arrow is pressed.
-        /// </summary>
-        private readonly Vector2 _upForce = new(0, -30 * PIXELS_PER_METER);
-
-        // ! remove
-        /// <summary>
-        /// Force applied to the particle when the left arrow is pressed.
-        /// </summary>
-        private readonly Vector2 _leftForce = new(-30 * PIXELS_PER_METER, 0);
-
-        // ! remove
-        /// <summary>
-        /// Force applied to the particle when the right arrow is pressed.
-        /// </summary>
-        private readonly Vector2 _rightForce = new(30 * PIXELS_PER_METER, 0);
-
-        // ! remove
-        /// <summary>
-        /// Force applied to the particle when the down arrow is pressed.
-        /// </summary>
-        private readonly Vector2 _downForce = new(0, 30 * PIXELS_PER_METER);
-
-        // ! remove
-        /// <summary>
-        /// The rectangle that represents the liquid.
-        /// </summary>
-        private Rectangle _liquid;
-
         /// <summary>
         /// Create a new instance of the demo.
         /// </summary>
@@ -82,32 +57,14 @@ namespace Physics
 
         #region init
 
-        // ! remove
-        /// <summary>
-        /// The method to create/initialize the water texture.
-        /// </summary>
-        private void CreateWaterTexture()
-        {
-            _waterTexture = new Texture2D(GraphicsDevice, _liquid.Width, _liquid.Height);
-            var numPixels = _liquid.Width * _liquid.Height;
-            var colorData = new Color[numPixels];
-
-            for (var i = 0; i < numPixels; i++)
-                colorData[i] = Color.White;
-
-            _waterTexture.SetData(colorData);
-        }
-
         /// <summary>
         /// Initializes the demo.
         /// </summary>
         protected override void Initialize()
         {
-            var particle = new Particle(50, 100, 1.0f, 8);
-            var bigParticle = new Particle(150, 100, 10.0f, 20);
-            _SParticles.Add(particle);
-            _SParticles.Add(bigParticle);
-
+            _game = this;
+            
+            _SCurrentGame.Initialize();
             base.Initialize();
         }
 
@@ -117,17 +74,8 @@ namespace Physics
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            foreach (var particle in _SParticles) particle.Initialize(GraphicsDevice);
             ScreenBounds = GraphicsDevice.Viewport.Bounds;
-
-            // sets the bottom half of the screen as the liquid
-            _liquid.X = 0;
-            _liquid.Y = ScreenBounds.Height / 2;
-            _liquid.Width = ScreenBounds.Width;
-            _liquid.Height = ScreenBounds.Height / 2;
-
-            CreateWaterTexture();
+            _SCurrentGame.LoadContent(this);
         }
 
         #endregion
@@ -144,19 +92,12 @@ namespace Physics
             _spriteBatch.Begin();
 
             // draw calls
-            _spriteBatch.Draw(_waterTexture, _liquid, Color.Blue);
-            DrawParticles();
-
+            _SCurrentGame.Draw(_spriteBatch);
+            
             _spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        // ! remove
-        /// <summary>
-        /// Draws the particles in the demo game.
-        /// </summary>
-        private void DrawParticles() =>
-            _SParticles.ForEach(particle => particle.Draw(_spriteBatch));
 
         #endregion
 
@@ -166,19 +107,12 @@ namespace Physics
         /// Delta Update method, intended to be used for physics calculations.
         /// </summary>
         /// <param name="deltaTime">the delta time to apply to the physics simulations.</param>
-        private void DeltaUpdate(float deltaTime)
-        {
-            foreach (var particle in _SParticles)
-            {
-                var weight = new Vector2(0, particle.mass * GRAVITY_MPS * PIXELS_PER_METER);
-                particle.AddForce(weight);
+        private void DeltaUpdate(float deltaTime) =>
+            _SCurrentGame.DeltaUpdate(deltaTime);
 
-                if (particle.position.Y >= _liquid.Y)
-                    particle.AddForce(Force.GenerateDragForce(particle, 0.03f));
-
-                particle.DeltaUpdate(deltaTime);
-            }
-        }
+        // ! remove
+        private void TopDownDemo(Particle particle) =>
+                particle.AddForce(Force.GenerateFrictionForce(particle, 10 * Constants.PIXELS_PER_METER));
 
         /// <summary>
         /// The demo's update method, which is called every frame.
@@ -186,28 +120,8 @@ namespace Physics
         /// <param name="gameTime">The current <see cref="GameTime"/> object.</param>
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
-                Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-
-            // handles mouse input, spawns a new particle when the mouse is clicked.
-            if (Mouse.GetState() is {LeftButton: ButtonState.Pressed})
-            {
-                var newParticle = new Particle(Mouse.GetState().X, Mouse.GetState().Y, 1.0f, 8);
-                newParticle.Initialize(GraphicsDevice);
-                _SParticles.Add(newParticle);
-            }
-
             CheckAndDoDeltaUpdate(gameTime);
-            foreach (var particle in _SParticles)
-            {
-                if (Keyboard.GetState().IsKeyDown(Keys.Up)) particle.AddForce(_upForce);
-                else if (Keyboard.GetState().IsKeyDown(Keys.Left)) particle.AddForce(_leftForce);
-                else if (Keyboard.GetState().IsKeyDown(Keys.Right)) particle.AddForce(_rightForce);
-                else if (Keyboard.GetState().IsKeyDown(Keys.Down)) particle.AddForce(_downForce);
-                particle.Update(gameTime);
-            }
-
+            _SCurrentGame.Update(gameTime);
             base.Update(gameTime);
         }
 
