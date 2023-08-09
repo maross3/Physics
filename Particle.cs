@@ -110,7 +110,6 @@ namespace Physics
         {
             _radius = radius;
             position = new Vector2(x, y);
-            velocity = new Vector2(140, 30);
             this.mass = mass;
             SetInverseMass();
         }
