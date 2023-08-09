@@ -149,20 +149,20 @@ namespace Physics
         public void Update(GameTime time)
         {
             // hacked collisions for now
-            if (position.Y + _texture.Height > Game1.ScreenBounds.Bottom)
+            if (position.Y + _texture.Height > PhysicsDemo.ScreenBounds.Bottom)
             {
-                position.Y = Game1.ScreenBounds.Bottom - _texture.Height;
+                position.Y = PhysicsDemo.ScreenBounds.Bottom - _texture.Height;
                 velocity.Y *= -0.8f;
             }
 
-            if (position.X + _texture.Width > Game1.ScreenBounds.Right)
+            if (position.X + _texture.Width > PhysicsDemo.ScreenBounds.Right)
             {
-                position.X = Game1.ScreenBounds.Right - _texture.Width;
+                position.X = PhysicsDemo.ScreenBounds.Right - _texture.Width;
                 velocity.X *= -0.9f;
             }
-            else if (position.X < Game1.ScreenBounds.Left)
+            else if (position.X < PhysicsDemo.ScreenBounds.Left)
             {
-                position.X = Game1.ScreenBounds.Left + 1;
+                position.X = PhysicsDemo.ScreenBounds.Left + 1;
                 velocity.X *= -0.9f;
             }
         }

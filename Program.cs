@@ -1,3 +1,3 @@
 ﻿
-using var game = new Physics.Game1();
+using var game = new Physics.PhysicsDemo();
 game.Run();
