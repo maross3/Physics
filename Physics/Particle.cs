@@ -106,8 +106,18 @@ namespace Physics
         /// </summary>
         private Texture2D _texture;
 
+        private Color _color = Color.White;
         public Particle(float x, float y, float mass, int radius)
         {
+            _radius = radius;
+            position = new Vector2(x, y);
+            this.mass = mass;
+            SetInverseMass();
+        }
+
+        public Particle(float x, float y, float mass, int radius, Color color)
+        {
+            _color = color;
             _radius = radius;
             position = new Vector2(x, y);
             this.mass = mass;
@@ -136,7 +146,7 @@ namespace Physics
                     var pos = new Vector2(x - diam, y - diam);
 
                     if (pos.LengthSquared() < diamsq)
-                        colorData[index] = Color.White;
+                        colorData[index] = _color;
                     else
                         colorData[index] = Color.Transparent;
                 }
@@ -186,18 +196,27 @@ namespace Physics
         /// <param name="time">The game time object.</param>
         public void Update(GameTime time)
         {
-            // hacked collisions for now
+            // Collisions for the bottom
             if (position.Y + _texture.Height > PhysicsDemo.ScreenBounds.Bottom)
             {
                 position.Y = PhysicsDemo.ScreenBounds.Bottom - _texture.Height;
                 velocity.Y *= -0.8f;
             }
 
+            // Collisions for the top
+            if (position.Y < PhysicsDemo.ScreenBounds.Top)
+            {
+                position.Y = PhysicsDemo.ScreenBounds.Top;
+                velocity.Y *= -0.8f;
+            }
+
+            // Collisions for the right side
             if (position.X + _texture.Width > PhysicsDemo.ScreenBounds.Right)
             {
                 position.X = PhysicsDemo.ScreenBounds.Right - _texture.Width;
                 velocity.X *= -0.9f;
             }
+            // Collisions for the left side
             else if (position.X < PhysicsDemo.ScreenBounds.Left)
             {
                 position.X = PhysicsDemo.ScreenBounds.Left + 1;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static Physics.Constants;
@@ -7,6 +8,20 @@ namespace Physics.DemoGames.BaseGames;
 
 public abstract class ParticleGame : BaseDemoGame
 {
+    protected static void CreateAndAddParticle(int x, int y,float mass, int radius)
+    {
+        var particle = new Particle(x, y, mass, radius);
+        particle.Initialize(PhysicsDemo.GetGraphicsDevice());
+        SParticles.Add(particle);
+    }
+    
+    protected static void CreateAndAddParticle(int x, int y,float mass, int radius, Color color)
+    {
+        var particle = new Particle(x, y, mass, radius, color);
+        particle.Initialize(PhysicsDemo.GetGraphicsDevice());
+        SParticles.Add(particle);
+    }
+    
     /// <summary>
     /// List of particles for testing.
     /// </summary>

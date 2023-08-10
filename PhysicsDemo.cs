@@ -29,7 +29,9 @@ namespace Physics
         /// </summary>
         public static Rectangle ScreenBounds { get; private set; }
 
-        private static readonly BaseDemoGame _SCurrentGame = new ParticleDragDemo();
+        private static readonly BaseDemoGame _SCurrentGame =
+            new ParticleFrictionDemo();
+            //new ParticleDragDemo();
         
         /// <summary>
         /// The graphics device manager for the demo game.
